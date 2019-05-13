@@ -41,6 +41,7 @@ public class RuntimeOptionsFactory {
                 addJunitOptions(options, args);
             }
         }
+        parseSystemProps();
         addDefaultFeaturePathIfNoFeaturePathIsSpecified(args, clazz);
         addDefaultGlueIfNoOverridingGlueIsSpecified(args, clazz);
         return args;
@@ -169,5 +170,33 @@ public class RuntimeOptionsFactory {
 
     private CucumberOptions getOptions(Class<?> clazz) {
         return clazz.getAnnotation(CucumberOptions.class);
+    }
+
+    private void parseSystemProps() {
+        Env env = Env.INSTANCE;
+        String argv = env.get("cucumber.options");
+        if (argv != null){
+            List<String> args = Shellwords.parse(argv);
+            while (!args.isEmpty()) {
+                String arg = args.remove(0).trim();
+                if (arg.equals("--i18n") || arg.equals("--threads")
+                    || arg.equals("--plugin") || arg.equals("--add-plugin") || arg.equals("-p")
+                    || arg.equals("--snippets")
+                    || arg.equals("--name") || arg.equals("-n")
+                    || arg.equals("--tags") || arg.equals("-t") ) {
+                    args.remove(0);
+                    continue;
+                } else if (arg.equals("--glue") || arg.equals("-g")){
+                    args.remove(0);
+                    overridingGlueSpecified = true;
+                    continue;
+                } else if (arg.startsWith("-")) {
+                    continue;
+                } else if (arg.startsWith("@") || !arg.isEmpty()) {
+                    featuresSpecified = true;
+                    continue;
+                }
+            }
+        }
     }
 }
